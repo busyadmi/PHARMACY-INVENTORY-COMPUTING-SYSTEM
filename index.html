@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaCore - Pharmacy Inventory & Computing System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 font-sans text-slate-800">
+
+    <!-- TOP HEADER -->
+    <header class="bg-indigo-950 text-white p-4 shadow-xl flex justify-between items-center border-b border-indigo-800">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-teal-500/20 rounded-lg border border-teal-500/40">
+                <i class="fa-solid fa-pills text-2xl text-teal-400"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide">PharmaCore System</h1>
+                <p class="text-xs text-indigo-300">Parallel Architecture & AI-Driven Pharmacy Computing Platform</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 text-xs">
+            <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-full flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Parallel Backend Connected
+            </span>
+            <span class="bg-indigo-900 border border-indigo-700 px-3 py-1 rounded-md text-indigo-200">
+                <i class="fa-regular fa-clock mr-1 text-teal-400"></i> <span id="clock">--:--:--</span>
+            </span>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="bg-indigo-900 text-white flex px-6 space-x-2 border-b border-indigo-800">
+        <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn px-4 py-3 text-xs font-semibold border-b-2 border-teal-400 text-teal-300 flex items-center gap-2">
+            <i class="fa-solid fa-boxes-stacked"></i> Master Inventory
+        </button>
+        <button onclick="switchTab('billing')" id="tab-billing" class="tab-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-indigo-200 hover:text-white flex items-center gap-2">
+            <i class="fa-solid fa-cash-register"></i> POS & Billing
+        </button>
+        <button onclick="switchTab('expiry')" id="tab-expiry" class="tab-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-indigo-200 hover:text-white flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation"></i> FEFO Expiry Matrix
+        </button>
+        <button onclick="switchTab('ai')" id="tab-ai" class="tab-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-indigo-200 hover:text-white flex items-center gap-2">
+            <i class="fa-solid fa-brain"></i> AI Forecast & Anomalies
+        </button>
+        <button onclick="switchTab('streaming')" id="tab-streaming" class="tab-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-indigo-200 hover:text-white flex items-center gap-2">
+            <i class="fa-solid fa-tower-broadcast"></i> Live Stream Console
+        </button>
+    </nav>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="p-6 max-w-7xl mx-auto space-y-6">
+
+        <!-- TAB 1: MASTER INVENTORY -->
+        <section id="view-inventory" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Barcode Signal Decoder -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 col-span-1">
+                    <h2 class="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-barcode text-indigo-600"></i> GS1 Scanner Signal Decoder
+                    </h2>
+                    <p class="text-xs text-slate-500 mb-4">Simulates hardware scanner data ingestion for GTIN, Batch, and Expiration signals.</p>
+                    
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Raw Hardware Barcode Stream</label>
+                    <input type="text" id="raw-barcode" value="(01)00355566677788(10)CPR-2026-10(17)261005" class="w-full text-xs font-mono p-2.5 border rounded border-slate-300 mb-3 bg-slate-50 focus:bg-white outline-none focus:border-indigo-500">
+                    
+                    <button onclick="processScannerSignal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded shadow-sm transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-microchip"></i> Decode & Populate Form
+                    </button>
+
+                    <div class="mt-4 p-3 bg-indigo-50/70 border border-indigo-100 rounded-lg text-xs space-y-1.5">
+                        <div class="font-bold text-indigo-900 border-b border-indigo-200 pb-1 flex justify-between">
+                            <span>Decoded Output Payload</span>
+                            <span class="text-[10px] font-mono text-indigo-500">GS1-128</span>
+                        </div>
+                        <div class="flex justify-between"><span class="text-slate-500">GTIN Code:</span> <span id="out-gtin" class="font-mono font-bold text-slate-800">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Batch Number:</span> <span id="out-batch" class="font-mono font-bold text-slate-800">--</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Expiry Date:</span> <span id="out-expiry" class="font-mono font-bold text-slate-800">--</span></div>
+                    </div>
+                </div>
+
+                <!-- Stock Entry Form -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 col-span-2">
+                    <h2 class="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-file-circle-plus text-indigo-600"></i> Medication Batch Ingestion Form
+                    </h2>
+                    <p class="text-xs text-slate-500 mb-4">Stock is tracked strictly by Batch ID to prevent mixing different expiry dates for the same drug.</p>
+
+                    <form id="inventory-form" onsubmit="addOrUpdateStock(event)" class="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Medication Name</label>
+                            <input type="text" id="input-name" required placeholder="e.g. Flexon 400mg" class="w-full p-2 border rounded border-slate-300 outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">GTIN (GS1 Barcode)</label>
+                            <input type="text" id="input-gtin" required placeholder="00355566677788" class="w-full p-2 border rounded border-slate-300 outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Batch ID (Unique Per Expiry)</label>
+                            <input type="text" id="input-batch" required placeholder="FLX-2026-EXP2D" class="w-full p-2 border rounded border-slate-300 outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Expiration Date</label>
+                            <input type="date" id="input-expiry" required class="w-full p-2 border rounded border-slate-300 outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Quantity Received</label>
+                            <input type="number" id="input-qty" min="1" value="100" required class="w-full p-2 border rounded border-slate-300 outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-600 mb-1">Unit Selling Price ($)</label>
+                            <input type="number" step="0.01" id="input-price" value="1.20" required class="w-full p-2 border rounded border-slate-300 outline-none">
+                        </div>
+                        <div class="col-span-2 pt-2">
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded shadow-sm text-xs flex items-center gap-2">
+                                <i class="fa-solid fa-database"></i> Commit Batch Entry to Master Inventory
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Master Inventory Table -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Live Pharmacy Stock Catalog (Batch Isolated)</h3>
+                    <span class="text-xs text-indigo-600 font-semibold bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
+                        <i class="fa-solid fa-layer-group mr-1"></i> Multi-Batch Expiry Control Active
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b">
+                            <tr>
+                                <th class="p-3">Medication Name</th>
+                                <th class="p-3">GTIN Code</th>
+                                <th class="p-3">Batch ID</th>
+                                <th class="p-3">In-Stock Qty</th>
+                                <th class="p-3">Unit Price</th>
+                                <th class="p-3">Expiry Date</th>
+                                <th class="p-3">Stock Signal</th>
+                                <th class="p-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: POS & BILLING -->
+        <section id="view-billing" class="tab-content hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-cart-shopping text-indigo-600"></i> Pharmacist Checkout Terminal
+                    </h2>
+                    <span class="text-xs text-slate-500">Click card to add batch to cart</span>
+                </div>
+                <div id="pos-items-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1"></div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 lg:col-span-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center border-b pb-2 mb-3">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Billing Cart</h3>
+                        <button onclick="clearCart()" title="Clear Cart" class="text-[11px] text-red-600 hover:text-red-800 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-trash-arrow-up"></i> Clear Cart
+                        </button>
+                    </div>
+                    <div id="cart-list" class="text-xs space-y-2 max-h-64 overflow-y-auto mb-4">
+                        <p class="text-slate-400 italic">No items added to billing cart.</p>
+                    </div>
+                </div>
+                <div class="border-t pt-3">
+                    <div class="flex justify-between font-bold text-slate-800 text-sm mb-4">
+                        <span>Transaction Total:</span>
+                        <span id="cart-total" class="text-indigo-600 text-base">$0.00</span>
+                    </div>
+                    <button onclick="openUpiPaymentModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded text-xs shadow-sm flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-qrcode text-amber-300"></i> Pay via UPI QR Code & Checkout
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: EXPIRY ALERTS (FEFO) -->
+        <section id="view-expiry" class="tab-content hidden space-y-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> FEFO Expiry Risk Priority Matrix
+                        </h2>
+                        <p class="text-xs text-slate-500">Parallel thread worker output sorting batches by shelf life urgency.</p>
+                    </div>
+                    <span class="text-[11px] bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-full font-medium">
+                        First-Expired, First-Out (FEFO) Rule
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b">
+                            <tr>
+                                <th class="p-3">Medication Name</th>
+                                <th class="p-3">Batch ID</th>
+                                <th class="p-3">Stock Qty</th>
+                                <th class="p-3">Expiry Date</th>
+                                <th class="p-3">Shelf Life Remaining</th>
+                                <th class="p-3">Risk Tier</th>
+                                <th class="p-3">Recommended Workflow</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expiry-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: AI DEMAND FORECAST & ANOMALIES -->
+        <section id="view-ai" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-indigo-600"></i> AI 30-Day Demand Projections
+                    </h2>
+                    <p class="text-xs text-slate-500 mb-4">Calculated using 90-day time-series sales forecasting.</p>
+                    <div id="ai-forecast-list" class="space-y-3 text-xs"></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-cat text-red-600"></i> Z-Score Anomaly Signal Detections
+                    </h2>
+                    <p class="text-xs text-slate-500 mb-4">Isolation score flagging transaction spikes (|Z| > 2.5).</p>
+                    <div id="ai-anomaly-list" class="space-y-3 text-xs"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: REAL-TIME STREAM CONSOLE -->
+        <section id="view-streaming" class="tab-content hidden space-y-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-tower-broadcast text-emerald-600"></i> Live Asynchronous Stock Stream Console
+                        </h2>
+                        <p class="text-xs text-slate-500">Simulates real-time sales transactions across multi-counter billing channels.</p>
+                    </div>
+                    <button id="stream-toggle-btn" onclick="toggleStreamSimulation()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded shadow-sm transition">
+                        <i class="fa-solid fa-play mr-1"></i> Start Transaction Stream
+                    </button>
+                </div>
+
+                <div class="bg-slate-900 text-emerald-400 font-mono text-xs p-4 rounded-xl h-72 overflow-y-auto space-y-2 border border-slate-800" id="stream-console">
+                    <div class="text-slate-500">// Stream Transformer connected to socket://pharmacy-stock-events</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- EDIT MEDICINE MODAL -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-lg w-full p-6">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Edit Medication Record & Price Correction
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 font-bold text-base">&times;</button>
+            </div>
+            
+            <form id="edit-form" onsubmit="saveMedicineEdit(event)" class="grid grid-cols-2 gap-4 text-xs">
+                <input type="hidden" id="edit-id">
+                
+                <div class="col-span-2">
+                    <label class="block font-semibold text-slate-600 mb-1">Medication Name</label>
+                    <input type="text" id="edit-name" required class="w-full p-2 border rounded border-slate-300 outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">GTIN Code</label>
+                    <input type="text" id="edit-gtin" required class="w-full p-2 border rounded border-slate-300 outline-none focus:border-indigo-500 font-mono">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Batch ID</label>
+                    <input type="text" id="edit-batch" required class="w-full p-2 border rounded border-slate-300 outline-none focus:border-indigo-500 font-mono">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Stock Quantity</label>
+                    <input type="number" id="edit-qty" min="0" required class="w-full p-2 border rounded border-slate-300 outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Unit Price ($)</label>
+                    <input type="number" step="0.01" id="edit-price" required class="w-full p-2 border rounded border-slate-300 outline-none focus:border-indigo-500 bg-amber-50 font-bold text-indigo-700">
+                </div>
+                <div class="col-span-2">
+                    <label class="block font-semibold text-slate-600 mb-1">Expiration Date</label>
+                    <input type="date" id="edit-expiry" required class="w-full p-2 border rounded border-slate-300 outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="col-span-2 flex justify-end gap-2 pt-3 border-t mt-2">
+                    <button type="button" onclick="closeEditModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded text-xs">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow-sm text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Changes & Sync State
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- UPI QR CODE PAYMENT MODAL -->
+    <div id="upi-modal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 text-center relative overflow-hidden">
+            <!-- Header -->
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <div class="text-left">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-qrcode text-indigo-600"></i> UPI Instant QR Checkout
+                    </h3>
+                    <p class="text-[11px] text-slate-500">Scan using GPay, PhonePe, Paytm or BHIM</p>
+                </div>
+                <span id="upi-status-badge" class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <i class="fa-solid fa-spinner animate-spin"></i> AWAITING PAYMENT
+                </span>
+            </div>
+
+            <!-- Amount Display -->
+            <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl mb-4">
+                <span class="text-xs text-slate-500 uppercase font-semibold block">Total Amount Payable</span>
+                <span id="upi-modal-amount" class="text-2xl font-black text-indigo-600">$0.00</span>
+            </div>
+
+            <!-- QR Code Container -->
+            <div class="relative inline-block bg-white p-3 border-2 border-indigo-100 rounded-2xl shadow-inner mb-4">
+                <img id="upi-qr-image" src="" alt="UPI QR Code" class="w-44 h-44 mx-auto rounded-lg">
+                <div id="upi-expired-overlay" class="hidden absolute inset-0 bg-slate-900/90 rounded-2xl flex flex-col items-center justify-center text-white p-4">
+                    <i class="fa-solid fa-circle-xmark text-red-500 text-4xl mb-2"></i>
+                    <span class="font-bold text-xs uppercase tracking-wider text-red-400">QR Code Expired</span>
+                    <p class="text-[10px] text-slate-300 mt-1">Payment timed out after 30 seconds.</p>
+                </div>
+            </div>
+
+            <!-- Timer Bar -->
+            <div class="mb-5">
+                <div class="flex justify-between text-xs font-bold mb-1">
+                    <span class="text-slate-600"><i class="fa-regular fa-clock text-indigo-600 mr-1"></i> QR Expiration Timer:</span>
+                    <span id="upi-timer-text" class="text-amber-600 font-mono">30s</span>
+                </div>
+                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                    <div id="upi-timer-bar" class="bg-amber-500 h-full w-full transition-all duration-1000"></div>
+                </div>
+            </div>
+
+            <!-- Manual Cashier Controls -->
+            <div class="space-y-2 pt-2 border-t">
+                <button onclick="confirmUpiPayment()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded shadow-sm text-xs flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-circle-check text-white"></i> Payment Received (Confirm & Complete Sale)
+                </button>
+                <button onclick="cancelUpiPayment()" class="w-full bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 rounded text-xs flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-circle-xmark text-red-600"></i> Payment Failed / Cancel Transaction
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT ENGINE -->
+    <script>
+        // MASTER DATA STATE
+        let inventory = [
+            { id: 1, name: "Amoxicillin 500mg", gtin: "00312345678906", batch: "AMX-2026-01", stock: 120, price: 15.50, expiry: "2026-10-25" },
+            { id: 2, name: "Paracetamol 650mg", gtin: "00398765432109", batch: "PCM-2027-09", stock: 450, price: 5.00, expiry: "2027-05-12" },
+            { id: 3, name: "Metformin 850mg", gtin: "00311122233344", batch: "MTF-2026-03", stock: 25, price: 22.00, expiry: "2026-10-15" },
+            { id: 4, name: "Ciprofloxacin 500mg", gtin: "00355566677788", batch: "CPR-2026-10", stock: 12, price: 30.00, expiry: "2026-10-05" },
+            { id: 5, name: "Flexon 400mg", gtin: "00377788899900", batch: "FLX-2026-EXP2D", stock: 15, price: 1.20, expiry: "2026-10-04" },
+            { id: 6, name: "Flexon 400mg", gtin: "00377788899900", batch: "FLX-2027-NEW1Y", stock: 150, price: 1.20, expiry: "2027-10-02" }
+        ];
+
+        let cart = [];
+        let streamInterval = null;
+        let upiTimerInterval = null;
+        let upiTimeRemaining = 30;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
+            renderMasterInventory();
+            renderPOSGrid();
+            renderExpiryAlerts();
+            renderAIMetrics();
+            processScannerSignal();
+        });
+
+        // TAB NAVIGATION
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-teal-400', 'text-teal-300');
+                btn.classList.add('border-transparent', 'text-indigo-200');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.remove('border-transparent', 'text-indigo-200');
+            activeBtn.classList.add('border-teal-400', 'text-teal-300');
+        }
+
+        // GS1 BARCODE PARSER
+        function processScannerSignal() {
+            const raw = document.getElementById('raw-barcode').value;
+            const gtinMatch = raw.match(/\(01\)(\d{14})/) || raw.match(/01(\d{14})/);
+            const batchMatch = raw.match(/\(10\)([A-Za-z0-9\-]+)/) || raw.match(/10([A-Za-z0-9\-]+)/);
+            const expiryMatch = raw.match(/\(17\)(\d{6})/) || raw.match(/17(\d{6})/);
+
+            let formattedExpiry = "2026-10-05";
+            if (expiryMatch) {
+                const ex = expiryMatch[1];
+                formattedExpiry = `20${ex.substring(0,2)}-${ex.substring(2,4)}-${ex.substring(4,6)}`;
+            }
+
+            const gtin = gtinMatch ? gtinMatch[1] : "00355566677788";
+            const batch = batchMatch ? batchMatch[1] : "CPR-2026-10";
+
+            document.getElementById('out-gtin').innerText = gtin;
+            document.getElementById('out-batch').innerText = batch;
+            document.getElementById('out-expiry').innerText = formattedExpiry;
+
+            document.getElementById('input-gtin').value = gtin;
+            document.getElementById('input-batch').value = batch;
+            document.getElementById('input-expiry').value = formattedExpiry;
+            document.getElementById('input-name').value = "Ciprofloxacin 500mg";
+        }
+
+        // BATCH ISOLATED STOCK COMMIT
+        function addOrUpdateStock(e) {
+            e.preventDefault();
+            const name = document.getElementById('input-name').value;
+            const gtin = document.getElementById('input-gtin').value;
+            const batch = document.getElementById('input-batch').value;
+            const expiry = document.getElementById('input-expiry').value;
+            const qty = parseInt(document.getElementById('input-qty').value);
+            const price = parseFloat(document.getElementById('input-price').value);
+
+            // Match strictly on Batch ID so different expiry dates for same medicine remain isolated
+            const existingBatch = inventory.find(i => i.batch === batch);
+            if (existingBatch) {
+                existingBatch.stock += qty;
+                existingBatch.price = price;
+                existingBatch.expiry = expiry;
+            } else {
+                inventory.push({ id: Date.now(), name, gtin, batch, stock: qty, price, expiry });
+            }
+
+            refreshAllViews();
+            alert(`Batch "${batch}" of ${name} committed successfully to Master Inventory!`);
+        }
+
+        // RENDER MASTER INVENTORY
+        function renderMasterInventory() {
+            const tbody = document.getElementById('inventory-table-body');
+            tbody.innerHTML = inventory.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-bold text-slate-800">${item.name}</td>
+                    <td class="p-3 font-mono text-slate-500">${item.gtin}</td>
+                    <td class="p-3 font-mono font-semibold text-indigo-900">${item.batch}</td>
+                    <td class="p-3 font-bold ${item.stock < 20 ? 'text-red-600' : 'text-slate-800'}">${item.stock} units</td>
+                    <td class="p-3 font-bold text-indigo-700 bg-indigo-50/50 rounded">$${item.price.toFixed(2)}</td>
+                    <td class="p-3 font-mono">${item.expiry}</td>
+                    <td class="p-3">${item.stock < 20 ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">REORDER TRIGGER</span>' : '<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold">OPTIMAL</span>'}</td>
+                    <td class="p-3 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="openEditModal(${item.id})" title="Edit / Correct Price" class="p-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded border border-indigo-200 transition">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteMedicine(${item.id})" title="Delete Batch" class="p-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded border border-red-200 transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // EDIT MODAL HANDLERS
+        function openEditModal(id) {
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('edit-name').value = item.name;
+            document.getElementById('edit-gtin').value = item.gtin;
+            document.getElementById('edit-batch').value = item.batch;
+            document.getElementById('edit-qty').value = item.stock;
+            document.getElementById('edit-price').value = item.price.toFixed(2);
+            document.getElementById('edit-expiry').value = item.expiry;
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        function saveMedicineEdit(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('edit-id').value);
+            const item = inventory.find(i => i.id === id);
+
+            if (item) {
+                const oldPrice = item.price;
+                item.name = document.getElementById('edit-name').value;
+                item.gtin = document.getElementById('edit-gtin').value;
+                item.batch = document.getElementById('edit-batch').value;
+                item.stock = parseInt(document.getElementById('edit-qty').value);
+                item.price = parseFloat(document.getElementById('edit-price').value);
+                item.expiry = document.getElementById('edit-expiry').value;
+
+                // Sync cart item if present
+                const cartItem = cart.find(c => c.id === id);
+                if (cartItem) {
+                    cartItem.price = item.price;
+                    cartItem.name = item.name;
+                }
+
+                closeEditModal();
+                refreshAllViews();
+                alert(`Batch ${item.batch} updated successfully!\nPrice: $${oldPrice.toFixed(2)} -> $${item.price.toFixed(2)}`);
+            }
+        }
+
+        function deleteMedicine(id) {
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+
+            if (confirm(`Are you sure you want to delete batch "${item.batch}" (${item.name}) from master inventory?`)) {
+                inventory = inventory.filter(i => i.id !== id);
+                cart = cart.filter(c => c.id !== id);
+                refreshAllViews();
+            }
+        }
+
+        function refreshAllViews() {
+            renderMasterInventory();
+            renderPOSGrid();
+            renderCart();
+            renderExpiryAlerts();
+            renderAIMetrics();
+        }
+
+        // POS TERMINAL
+        function renderPOSGrid() {
+            const grid = document.getElementById('pos-items-grid');
+            grid.innerHTML = inventory.map(item => `
+                <div onclick="addToCart(${item.id})" class="p-3 bg-slate-50 border border-slate-200 hover:border-indigo-500 rounded-lg cursor-pointer transition flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-slate-800 text-xs">${item.name}</div>
+                        <div class="text-indigo-900 font-mono text-[10px] font-semibold">Batch: ${item.batch} | Exp: ${item.expiry}</div>
+                        <div class="text-indigo-600 font-bold text-xs mt-1">$${item.price.toFixed(2)}</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[11px] font-bold ${item.stock < 20 ? 'text-red-600' : 'text-slate-600'} block">Stock: ${item.stock}</span>
+                        <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-semibold mt-1 inline-block">+ Add</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id) {
+            const item = inventory.find(i => i.id === id);
+            if (item.stock <= 0) return alert("Out of stock!");
+            const inCart = cart.find(c => c.id === id);
+            if (inCart) {
+                if (inCart.qty < item.stock) inCart.qty++;
+            } else {
+                cart.push({ id: item.id, name: item.name, batch: item.batch, price: item.price, qty: 1, maxStock: item.stock });
+            }
+            renderCart();
+        }
+
+        function changeCartQty(id, delta) {
+            const inCart = cart.find(c => c.id === id);
+            if (!inCart) return;
+
+            inCart.qty += delta;
+            if (inCart.qty <= 0) {
+                cart = cart.filter(c => c.id !== id);
+            } else if (inCart.qty > inCart.maxStock) {
+                inCart.qty = inCart.maxStock;
+                alert(`Cannot exceed available batch stock (${inCart.maxStock} units).`);
+            }
+            renderCart();
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(c => c.id !== id);
+            renderCart();
+        }
+
+        function clearCart() {
+            cart = [];
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-list');
+            if (cart.length === 0) {
+                container.innerHTML = `<p class="text-slate-400 italic">No items added to billing cart.</p>`;
+                document.getElementById('cart-total').innerText = "$0.00";
+                return;
+            }
+
+            let total = 0;
+            container.innerHTML = cart.map(item => {
+                const sub = item.price * item.qty;
+                total += sub;
+                return `
+                    <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <div class="flex-1 pr-2">
+                            <div class="font-bold text-slate-800">${item.name}</div>
+                            <div class="text-[10px] font-mono text-indigo-700">Batch: ${item.batch} | $${item.price.toFixed(2)}/unit</div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="changeCartQty(${item.id}, -1)" class="w-5 h-5 bg-slate-200 hover:bg-slate-300 font-bold rounded flex items-center justify-center text-xs">-</button>
+                            <span class="font-bold text-xs w-4 text-center">${item.qty}</span>
+                            <button onclick="changeCartQty(${item.id}, 1)" class="w-5 h-5 bg-slate-200 hover:bg-slate-300 font-bold rounded flex items-center justify-center text-xs">+</button>
+                            <span class="font-bold text-slate-800 text-xs ml-2">$${sub.toFixed(2)}</span>
+                            <button onclick="removeFromCart(${item.id})" title="Remove Item" class="text-red-500 hover:text-red-700 ml-2 p-1">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('cart-total').innerText = `$${total.toFixed(2)}`;
+        }
+
+        // UPI QR CODE CHECKOUT WITH 30S EXPIRATION TIMER
+        function openUpiPaymentModal() {
+            if (cart.length === 0) {
+                alert("Billing cart is empty! Please add items before checking out.");
+                return;
+            }
+
+            let total = 0;
+            cart.forEach(c => total += c.price * c.qty);
+
+            document.getElementById('upi-modal-amount').innerText = `$${total.toFixed(2)}`;
+            
+            // Generate QR code URL
+            const qrData = encodeURIComponent(`upi://pay?pa=pharmacy@upi&pn=PharmaCore&am=${total.toFixed(2)}&cu=USD`);
+            document.getElementById('upi-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+
+            // Reset Overlay & Badge
+            document.getElementById('upi-expired-overlay').classList.add('hidden');
+            const badge = document.getElementById('upi-status-badge');
+            badge.className = "bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1";
+            badge.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> AWAITING PAYMENT`;
+
+            // Reset Timer State
+            upiTimeRemaining = 30;
+            updateTimerDisplay();
+
+            if (upiTimerInterval) clearInterval(upiTimerInterval);
+
+            // Start 30s Countdown
+            upiTimerInterval = setInterval(() => {
+                upiTimeRemaining--;
+                updateTimerDisplay();
+
+                if (upiTimeRemaining <= 0) {
+                    clearInterval(upiTimerInterval);
+                    upiTimerInterval = null;
+                    handleUpiExpired();
+                }
+            }, 1000);
+
+            document.getElementById('upi-modal').classList.remove('hidden');
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById('upi-timer-text').innerText = `${upiTimeRemaining}s`;
+            const pct = (upiTimeRemaining / 30) * 100;
+            const bar = document.getElementById('upi-timer-bar');
+            bar.style.width = `${pct}%`;
+
+            if (upiTimeRemaining <= 10) {
+                bar.className = "bg-red-500 h-full transition-all duration-1000";
+            } else {
+                bar.className = "bg-amber-500 h-full transition-all duration-1000";
+            }
+        }
+
+        function handleUpiExpired() {
+            document.getElementById('upi-expired-overlay').classList.remove('hidden');
+            const badge = document.getElementById('upi-status-badge');
+            badge.className = "bg-red-100 text-red-800 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1";
+            badge.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> QR EXPIRED / FAILED`;
+            
+            // Note: Does NOT deduct stock or clear cart!
+        }
+
+        function confirmUpiPayment() {
+            if (upiTimeRemaining <= 0) {
+                alert("Cannot confirm: The UPI QR code has expired! Please click Pay again to generate a new QR code.");
+                return;
+            }
+
+            if (upiTimerInterval) clearInterval(upiTimerInterval);
+
+            // Atomic Stock Deduction
+            cart.forEach(cItem => {
+                const inv = inventory.find(i => i.id === cItem.id);
+                if (inv) inv.stock -= cItem.qty;
+            });
+
+            cart = [];
+            document.getElementById('upi-modal').classList.add('hidden');
+            refreshAllViews();
+            alert("Payment Verified Successfully! Transaction complete and inventory stock deducted.");
+        }
+
+        function cancelUpiPayment() {
+            if (upiTimerInterval) clearInterval(upiTimerInterval);
+            document.getElementById('upi-modal').classList.add('hidden');
+            alert("Payment marked as FAILED / CANCELLED. No stock was deducted and billing cart remains saved.");
+        }
+
+        // FEFO EXPIRY MATRIX
+        function renderExpiryAlerts() {
+            const tbody = document.getElementById('expiry-table-body');
+            const today = new Date();
+
+            const classified = inventory.map(item => {
+                const expDate = new Date(item.expiry);
+                const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                let priority = "SAFE", badge = "bg-emerald-100 text-emerald-800", action = "Standard Dispatch";
+
+                if (diffDays <= 30) {
+                    priority = "CRITICAL (<= 30 Days)";
+                    badge = "bg-red-100 text-red-800 font-bold";
+                    action = "Apply 50% FEFO Discount / Return Vendor";
+                } else if (diffDays <= 90) {
+                    priority = "WARNING (<= 90 Days)";
+                    badge = "bg-amber-100 text-amber-800 font-bold";
+                    action = "Prioritize First-Expired Dispatch";
+                }
+
+                return { ...item, diffDays, priority, badge, action };
+            }).sort((a,b) => a.diffDays - b.diffDays);
+
+            tbody.innerHTML = classified.map(item => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-bold">${item.name}</td>
+                    <td class="p-3 font-mono font-semibold text-indigo-900">${item.batch}</td>
+                    <td class="p-3 font-bold">${item.stock}</td>
+                    <td class="p-3 font-mono">${item.expiry}</td>
+                    <td class="p-3 font-bold ${item.diffDays <= 30 ? 'text-red-600' : 'text-slate-800'}">${item.diffDays} Days</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${item.badge}">${item.priority}</span></td>
+                    <td class="p-3 text-slate-600 font-medium">${item.action}</td>
+                </tr>
+            `).join('');
+        }
+
+        // AI METRICS
+        function renderAIMetrics() {
+            const forecastContainer = document.getElementById('ai-forecast-list');
+            const anomalyContainer = document.getElementById('ai-anomaly-list');
+
+            forecastContainer.innerHTML = `
+                <div class="p-3 bg-indigo-50/60 rounded-lg border border-indigo-100">
+                    <div class="font-bold text-slate-800">Paracetamol 650mg</div>
+                    <div class="text-slate-600">Avg Demand: <span class="font-bold">48.4 units/day</span> | Projected 30-Day: <span class="font-bold text-indigo-600">1,451 units</span></div>
+                    <div class="text-slate-500 text-[11px] mt-1">Safety Stock: 86 units | Reorder Point (s): 425 units</div>
+                </div>
+                <div class="p-3 bg-indigo-50/60 rounded-lg border border-indigo-100">
+                    <div class="font-bold text-slate-800">Amoxicillin 500mg</div>
+                    <div class="text-slate-600">Avg Demand: <span class="font-bold">10.5 units/day</span> | Projected 30-Day: <span class="font-bold text-indigo-600">315 units</span></div>
+                    <div class="text-slate-500 text-[11px] mt-1">Safety Stock: 26 units | Reorder Point (s): 100 units</div>
+                </div>
+            `;
+
+            anomalyContainer.innerHTML = `
+                <div class="p-3 bg-red-50 rounded-lg border border-red-200 text-red-900">
+                    <div class="font-bold flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-red-600"></i> Transaction Anomaly Flagged</div>
+                    <div class="text-xs mt-1"><span class="font-bold">Sale #37</span> | Counter #1 | Product: Amoxicillin</div>
+                    <div class="text-[11px] font-mono text-red-700 mt-1">Spike Quantity: 150 units (Z-Score: 9.07)</div>
+                </div>
+            `;
+        }
+
+        // STREAM SIMULATION
+        function toggleStreamSimulation() {
+            const btn = document.getElementById('stream-toggle-btn');
+            const consoleBox = document.getElementById('stream-console');
+
+            if (streamInterval) {
+                clearInterval(streamInterval);
+                streamInterval = null;
+                btn.innerHTML = `<i class="fa-solid fa-play mr-1"></i> Start Transaction Stream`;
+                btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded shadow-sm";
+                consoleBox.innerHTML += `<div>// Stream paused.</div>`;
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-stop mr-1"></i> Stop Stream`;
+                btn.className = "bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded shadow-sm";
+                
+                streamInterval = setInterval(() => {
+                    const randomItem = inventory[Math.floor(Math.random() * inventory.length)];
+                    if (randomItem.stock > 0) {
+                        randomItem.stock -= 1;
+                        refreshAllViews();
+                        
+                        const log = `<div>[${new Date().toLocaleTimeString()}] <span class="text-teal-300">STREAM EVENT:</span> Multi-counter sale: 1x ${randomItem.name} (${randomItem.batch}). Stock: <span class="text-amber-300">${randomItem.stock}</span></div>`;
+                        consoleBox.innerHTML += log;
+                        consoleBox.scrollTop = consoleBox.scrollHeight;
+                    }
+                }, 2500);
+            }
+        }
+    </script>
+</body>
+</html>
